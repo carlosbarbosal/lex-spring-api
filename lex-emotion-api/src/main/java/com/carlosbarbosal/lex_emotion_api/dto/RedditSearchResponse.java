@@ -52,6 +52,7 @@ public class RedditSearchResponse {
         private int num_comments;  // Número de comentários
         private int score;         // Pontuação de upvotes/downvotes
         private String author;     // Autor da postagem
+        private String sentiment;
 
 
         public String getTitle() {
@@ -110,6 +111,14 @@ public class RedditSearchResponse {
             this.author = author;
         }
 
+        public String getSentiment() {
+            return sentiment;
+        }
+
+        public void setSentiment(String sentiment) {
+            this.sentiment = sentiment;
+        }
+
         @Override
         public String toString() {
             return "PostData{" +
@@ -120,6 +129,7 @@ public class RedditSearchResponse {
                     ", num_comments=" + num_comments +
                     ", score=" + score +
                     ", author='" + author + '\'' +
+                    ", sentiment='" + sentiment + '\'' +
                     '}';
         }
     }

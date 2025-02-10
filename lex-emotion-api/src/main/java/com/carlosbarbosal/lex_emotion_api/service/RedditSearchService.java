@@ -14,9 +14,12 @@ import java.util.stream.Collectors;
 public class RedditSearchService {
 
     private final RedditSearchApiClient redditSearchApiClient;
+    private final SentimentAnalysisService sentimentAnalysisService;
 
-    public RedditSearchService(RedditSearchApiClient redditSearchApiClient) {
+
+    public RedditSearchService(RedditSearchApiClient redditSearchApiClient, SentimentAnalysisService sentimentAnalysisService) {
         this.redditSearchApiClient = redditSearchApiClient;
+        this.sentimentAnalysisService = sentimentAnalysisService;
     }
 
     public List<RedditSearchResponse.RedditPostData> getPostsRelatedToLula() {
@@ -25,19 +28,16 @@ public class RedditSearchService {
         String restrictSr = "on";
         String time = "all";
 
-        RedditSearchResponse response = redditSearchApiClient.searchPosts(query, sort, restrictSr, time);
-
         // Obter a data de 2 anos atrás usando LocalDate
-        LocalDate twoYearsAgo = LocalDate.now().minusYears(2);
-        Instant twoYearsAgoInstant = twoYearsAgo.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        RedditSearchResponse response = redditSearchApiClient.searchPosts(query, sort, restrictSr, time);
+        long twoYearsAgo = Instant.now().minusSeconds(60L * 60 * 24 * 365 * 2).getEpochSecond();
 
         return response.getData().getChildren().stream()
-                .filter(post -> {
-                    Instant postTimestamp = Instant.ofEpochSecond(post.getData().getCreated_utc());
-
-                    // Verifica se o título contém "governo lula" e se a postagem foi criada nos últimos 2 anos
-                    return post.getData().getTitle().toLowerCase().contains("governo lula") &&
-                            postTimestamp.isAfter(twoYearsAgoInstant) && postTimestamp.isBefore(Instant.now());
+                .filter(post -> post.getData().getCreated_utc() >= twoYearsAgo)
+                .map(post -> {
+                    String sentiment = sentimentAnalysisService.analyzeSentiment(post.getData().getTitle());
+                    post.getData().setSentiment(sentiment);  // Adiciona a análise ao post
+                    return post;
                 })
                 .collect(Collectors.toList());
     }
